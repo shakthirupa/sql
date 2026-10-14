@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SQL Arena</title>
+<style>
+:root{
+  --bg:#0f1117;--sidebar:#13161e;--card:#1a1d27;--card2:#1f2333;
+  --tx:#e2e8f0;--mut:#64748b;--bd:#2a2f42;
+  --ac:#6366f1;--ac2:#818cf8;--ok:#22c55e;--bad:#ef4444;--warn:#f59e0b;
+  --code:#0d1117;--radius:10px;
+  --kw:#c792ea;--fn:#82aaff;--str:#c3e88d;--num:#f78c6c;--op:#89ddff;--cm:#546e7a;
+}
+body.light{
+  --bg:#f0f2f7;--sidebar:#ffffff;--card:#ffffff;--card2:#f5f7fb;
+  --tx:#1e2433;--mut:#8492a6;--bd:#dde1ea;
+  --ac:#4f46e5;--ac2:#6366f1;--ok:#16a34a;--bad:#dc2626;--warn:#d97706;
+  --code:#f8f9fc;
+  --kw:#7c3aed;--fn:#2563eb;--str:#16a34a;--num:#ea580c;--op:#0891b2;--cm:#94a3b8;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--bg);color:var(--tx);font:14px/1.6 system-ui,sans-serif;min-height:100vh;transition:background .2s,color .2s}
+
+header{display:flex;gap:10px;align-items:center;padding:0 16px;height:50px;background:var(--sidebar);border-bottom:1px solid var(--bd);position:sticky;top:0;z-index:20}
+header h1{font-size:15px;font-weight:700;letter-spacing:-.3px;white-space:nowrap}
+header h1 span{color:var(--ac2)}
+.hgap{flex:1}
+.tab-bar{display:flex;gap:3px;background:var(--card2);border-radius:8px;padding:3px;border:1px solid var(--bd)}
+.tab-bar button{font:inherit;font-size:13px;font-weight:500;border:none;background:transparent;color:var(--mut);padding:4px 14px;border-radius:6px;cursor:pointer;transition:all .15s}
+.tab-bar button.on{background:var(--ac);color:#fff}
+.icon-btn{font:inherit;font-size:16px;border:1px solid var(--bd);background:var(--card2);color:var(--tx);width:34px;height:34px;border-radius:8px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;flex-shrink:0}
+.icon-btn:hover{border-color:var(--ac2);color:var(--ac2)}
+
+main{display:flex;height:calc(100vh - 50px);overflow:hidden}
+
+.sidebar{width:230px;flex-shrink:0;background:var(--sidebar);border-right:1px solid var(--bd);overflow-y:auto;display:flex;flex-direction:column;transition:width .2s,opacity .2s}
+.sidebar.hidden{width:0;opacity:0;overflow:hidden;border:none}
+.sidebar-head{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);padding:12px 10px 6px}
+.it{padding:8px 10px;border-radius:8px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;margin:0 4px;transition:background .12s;gap:6px}
+.it:hover{background:var(--card2)}
+.it.on{background:var(--ac);color:#fff}
+.it.on .badge{background:rgba(255,255,255,.2);color:#fff}
+.it-title{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;min-width:0}
+.it-right{display:flex;align-items:center;gap:4px;flex-shrink:0}
+.del-item{font:inherit;font-size:13px;border:none;background:transparent;cursor:pointer;padding:2px 5px;border-radius:5px;color:var(--bad);opacity:0;transition:opacity .15s;line-height:1;flex-shrink:0}
+.it:hover .del-item{opacity:.7}
+.del-item:hover{opacity:1!important;background:rgba(239,68,68,.15)}
+.it.on .del-item{color:#ffaaaa}
+.it.on:hover .del-item{opacity:.8}
+.badge{font-size:10px;font-weight:600;padding:2px 7px;border-radius:20px;background:var(--card2);color:var(--mut);white-space:nowrap;flex-shrink:0}
+.badge.ok{background:rgba(34,197,94,.15);color:var(--ok)}
+.badge.easy{background:rgba(34,197,94,.12);color:#4ade80}
+.badge.medium{background:rgba(245,158,11,.12);color:#fbbf24}
+.badge.hard{background:rgba(239,68,68,.12);color:#f87171}
+body.light .badge.easy{color:#16a34a}
+body.light .badge.medium{color:#d97706}
+body.light .badge.hard{color:#dc2626}
+.del-item{font-size:12px;border:none;background:transparent;cursor:pointer;padding:2px 4px;border-radius:4px;opacity:.5;transition:opacity .15s;line-height:1}
+.del-item:hover{opacity:1;background:rgba(239,68,68,.15)}
+.it.on .del-item{opacity:.7}
+.it.on .del-item:hover{opacity:1}
+.new-btn button{width:100%;font:inherit;font-size:13px;font-weight:600;background:var(--ac);color:#fff;border:none;padding:8px;border-radius:8px;cursor:pointer;display:block}
+.new-btn{padding:8px;position:sticky;bottom:0;background:var(--sidebar);border-top:1px solid var(--bd);margin-top:auto;flex-shrink:0}
+.new-btn button:hover{opacity:.85}
+
+.workspace{flex:1;display:flex;overflow:hidden;min-height:0}
+
+/* practice split */
+.q-panel{width:320px;flex-shrink:0;border-right:1px solid var(--bd);overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;background:var(--card)}
+.q-panel.hidden{width:0;padding:0;overflow:hidden;border:none}
+.code-panel{flex:1;display:flex;flex-direction:column;overflow:hidden;background:var(--bg)}
+
+.card{background:var(--card);border:1px solid var(--bd);border-radius:var(--radius);padding:16px}
+.card-title{font-size:15px;font-weight:700}
+.diff{font-size:11px;font-weight:700;padding:2px 8px;border-radius:20px;text-transform:uppercase;letter-spacing:.05em}
+.diff.Easy{background:rgba(34,197,94,.12);color:#4ade80}
+.diff.Medium{background:rgba(245,158,11,.12);color:#fbbf24}
+.diff.Hard{background:rgba(239,68,68,.12);color:#f87171}
+body.light .diff.Easy{color:#16a34a}
+body.light .diff.Medium{color:#d97706}
+body.light .diff.Hard{color:#dc2626}
+.prob-desc{white-space:pre-wrap;font-size:13px;line-height:1.7;color:var(--tx);margin-top:8px}
+
+label.lbl{display:block;font-size:11px;font-weight:600;color:var(--mut);margin:12px 0 4px;letter-spacing:.05em;text-transform:uppercase}
+textarea,input[type=text],input[type=password],input[type=number]{width:100%;font:13px/1.5 ui-monospace,monospace;background:var(--code);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:9px 11px;resize:vertical;outline:none;transition:border-color .15s}
+textarea:focus,input:focus{border-color:var(--ac)}
+input[type=checkbox]{width:auto;accent-color:var(--ac)}
+select{width:100%;font:inherit;font-size:13px;background:var(--code);color:var(--tx);border:1px solid var(--bd);border-radius:8px;padding:8px 11px;outline:none}
+
+.btn{font:inherit;font-size:13px;font-weight:600;border:1px solid var(--bd);background:var(--card2);color:var(--tx);padding:7px 14px;border-radius:8px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:hover{border-color:var(--ac2);color:var(--ac2)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.primary{background:var(--ac);color:#fff;border-color:var(--ac)}
+.btn.primary:hover{background:var(--ac2);border-color:var(--ac2)}
+.btn.danger{background:rgba(239,68,68,.08);color:var(--bad);border-color:rgba(239,68,68,.3)}
+.btn.danger:hover{background:rgba(239,68,68,.18)}
+.btn.ai{background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;border:none}
+.btn.ai:hover{opacity:.88}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px}
+
+.tbl{overflow-x:auto;border-radius:8px;border:1px solid var(--bd)}
+table{border-collapse:collapse;font-size:12.5px;width:100%}
+th{background:var(--card2);font-weight:600;text-align:left;padding:6px 11px;border-bottom:1px solid var(--bd)}
+td{padding:5px 11px;border-bottom:1px solid var(--bd)}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:var(--card2)}
+
+.msg{font-size:13px;padding:9px 13px;border-radius:8px;margin-top:8px}
+.msg.ok{background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.25)}
+.msg.bad{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25)}
+.msg.info{background:rgba(99,102,241,.1);border:1px solid rgba(99,102,241,.25);color:var(--ac2)}
+.ok{color:var(--ok)}.bad{color:var(--bad)}.mut{color:var(--mut)}
+
+@keyframes spin{to{transform:rotate(360deg)}}
+.spin{display:inline-block;width:13px;height:13px;border:2px solid var(--bd);border-top-color:var(--ac2);border-radius:50%;animation:spin .7s linear infinite;vertical-align:middle;margin-right:5px}
+
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;flex:1;gap:10px;color:var(--mut);font-size:13px}
+.empty svg{opacity:.25}
+.login-wrap{max-width:340px;margin:60px auto;padding:16px}
+.check-row{display:flex;gap:6px;align-items:center;font-size:13px;color:var(--mut)}
+.tc{background:var(--card2);border:1px solid var(--bd);border-radius:8px;padding:11px;margin-top:8px}
+.tc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px}
+.tc-name{font-size:13px;font-weight:600}
+.tc-meta{font-size:11px;color:var(--mut)}
+.res{border-top:1px solid var(--bd);padding:9px 0}
+.res:first-child{border-top:none}
+pre{background:var(--code);border:1px solid var(--bd);padding:11px;border-radius:8px;overflow-x:auto;font:12.5px/1.6 ui-monospace,monospace;white-space:pre-wrap;word-break:break-word}
+
+/* ── SQL editor toolbar ── */
+.editor-bar{display:flex;gap:8px;align-items:center;padding:10px 14px;border-bottom:1px solid var(--bd);background:var(--sidebar);flex-shrink:0}
+.editor-bar .btn{padding:5px 12px;font-size:12px}
+.editor-wrap{flex:1;position:relative;overflow:hidden;display:flex;flex-direction:column}
+.sql-editor{flex:1;width:100%;font:14px/1.6 ui-monospace,monospace;background:var(--code);color:var(--tx);border:none;outline:none;padding:14px;resize:none;tab-size:2}
+.output-area{padding:12px 14px;overflow-y:auto;background:var(--bg)}
+.drag-divider{height:5px;background:var(--bd);cursor:row-resize;flex-shrink:0;transition:background .15s}
+.drag-divider:hover,.drag-divider.dragging{background:var(--ac)}
+
+/* ── SQL syntax highlight ── */
+.sql-hl{color:var(--tx)}
+.sql-hl .kw{color:var(--kw);font-weight:600}
+.sql-hl .fn{color:var(--fn)}
+.sql-hl .str{color:var(--str)}
+.sql-hl .num{color:var(--num)}
+.sql-hl .op{color:var(--op)}
+.sql-hl .cm{color:var(--cm);font-style:italic}
+
+/* highlight overlay */
+.hl-wrap{position:relative;flex:1;overflow:hidden;min-height:0}
+.hl-bg{position:absolute;inset:0;background:var(--code);z-index:0}
+.hl-pre{position:absolute;inset:0;margin:0;padding:14px;font:14px/1.6 ui-monospace,monospace;white-space:pre-wrap;word-break:break-word;pointer-events:none;border:none;border-radius:0;background:transparent;overflow:hidden;z-index:1}
+.hl-textarea{position:absolute;inset:0;width:100%;height:100%;font:14px/1.6 ui-monospace,monospace;background:transparent;color:transparent;caret-color:var(--tx);border:none;outline:none;padding:14px;resize:none;tab-size:2;z-index:2}
+
+/* tabs inside code panel */
+.out-tabs{display:flex;gap:0;border-bottom:1px solid var(--bd);background:var(--sidebar);flex-shrink:0}
+.out-tab{font:inherit;font-size:12px;font-weight:500;border:none;border-bottom:2px solid transparent;background:transparent;color:var(--mut);padding:8px 16px;cursor:pointer;transition:all .15s}
+.out-tab.on{color:var(--ac2);border-bottom-color:var(--ac2)}
+</style>
+</head><body>
+<header>
+  <h1>⚡ SQL <span>Arena</span></h1>
+  <button class="icon-btn" id="toggleSidebar" title="Toggle problem list">☰</button>
+  <div class="hgap"></div>
+  <div class="tab-bar">
+    <button id="bP" class="on">Practice</button>
+    <button id="bA">Author</button>
+  </div>
+  <button class="icon-btn" id="themeBtn" title="Toggle theme">🌙</button>
+</header>
+<main id="app"></main>
+<script>
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let mode='practice',list=[],cur=null,key=sessionStorage.adminKey||'',solved=JSON.parse(localStorage.solved||'{}'),form=null;
+let sidebarOpen=true, activeOutTab='output';
+
+// theme
+const savedTheme=localStorage.theme||'dark';
+if(savedTheme==='light')document.body.classList.add('light');
+$('#themeBtn').textContent=savedTheme==='light'?'🌙':'☀️';
+$('#themeBtn').onclick=()=>{
+  const isLight=document.body.classList.toggle('light');
+  localStorage.theme=isLight?'light':'dark';
+  $('#themeBtn').textContent=isLight?'🌙':'☀️';
+};
+
+$('#toggleSidebar').onclick=()=>{
+  sidebarOpen=!sidebarOpen;
+  const sb=$('.sidebar');
+  if(sb)sb.classList.toggle('hidden',!sidebarOpen);
+};
+
+const api=async(url,opt={})=>{
+  const r=await fetch(url,{...opt,headers:{'content-type':'application/json','x-admin-key':key,...(opt.headers||{})},body:opt.body&&JSON.stringify(opt.body)});
+  const j=await r.json();if(!r.ok)throw new Error(j.error||'Request failed');return j;
+};
+
+const table=rs=>!rs||!rs.length?'<span class="mut">(no rows)</span>':`<div class="tbl"><table><tr>${Object.keys(rs[0]).map(k=>`<th>${esc(k)}</th>`).join('')}</tr>${rs.map(r=>`<tr>${Object.values(r).map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')}</table></div>`;
+const levelClass=l=>({'Easy':'easy','Medium':'medium','Hard':'hard'}[l]||'');
+
+// SQL syntax highlighter
+function hlSQL(code){
+  const e=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  // escape first, then apply spans on the escaped string
+  let s=e(code);
+  s=s.replace(/--[^\n]*/g,m=>`<span class="cm">${m}</span>`);
+  s=s.replace(/'[^']*'/g,m=>`<span class="str">${m}</span>`);
+  s=s.replace(/\b(\d+\.?\d*)\b/g,`<span class="num">$1</span>`);
+  s=s.replace(/\b(SELECT|FROM|WHERE|AND|OR|NOT|IN|IS|NULL|JOIN|LEFT|RIGHT|INNER|OUTER|FULL|CROSS|ON|AS|GROUP BY|ORDER BY|HAVING|LIMIT|OFFSET|DISTINCT|UNION|ALL|INSERT|INTO|VALUES|UPDATE|SET|DELETE|CREATE|TABLE|DROP|ALTER|ADD|PRIMARY|KEY|FOREIGN|REFERENCES|DEFAULT|INDEX|WITH|CASE|WHEN|THEN|ELSE|END|EXISTS|BETWEEN|LIKE|ASC|DESC|BY)\b/gi,m=>`<span class="kw">${m}</span>`);
+  s=s.replace(/\b(COUNT|SUM|AVG|MIN|MAX|COALESCE|IFNULL|NULLIF|ROUND|ABS|LENGTH|SUBSTR|UPPER|LOWER|TRIM|CAST|STRFTIME|DATE|DATETIME|ROW_NUMBER|RANK|DENSE_RANK|OVER|PARTITION|LAG|LEAD|FIRST_VALUE|LAST_VALUE)\b/gi,m=>`<span class="fn">${m}</span>`);
+  s=s.replace(/(?<![a-zA-Z])(=|&lt;=?|&gt;=?|!=|&lt;&gt;|\*)(?![a-zA-Z])/g,m=>`<span class="op">${m}</span>`);
+  return s;
+}
+
+function makeEditor(id,initialVal,rows){
+  return `<div class="hl-wrap" style="height:${rows*22+28}px">
+    <div class="hl-bg"></div>
+    <pre class="hl-pre sql-hl" id="${id}_hl">${hlSQL(initialVal||'')}</pre>
+    <textarea class="hl-textarea" id="${id}" spellcheck="false" placeholder="SELECT ...">${esc(initialVal||'')}</textarea>
+  </div>`;
+}
+
+function bindEditor(id){
+  const ta=$('#'+id), pre=$('#'+id+'_hl');
+  if(!ta||!pre)return;
+  const sync=()=>{pre.innerHTML=hlSQL(ta.value);pre.scrollTop=ta.scrollTop;pre.scrollLeft=ta.scrollLeft};
+  ta.addEventListener('input',sync);
+  ta.addEventListener('scroll',()=>{pre.scrollTop=ta.scrollTop;pre.scrollLeft=ta.scrollLeft});
+  ta.addEventListener('keydown',e=>{
+    if(e.key==='Tab'){e.preventDefault();const s=ta.selectionStart,en=ta.selectionEnd;ta.value=ta.value.slice(0,s)+'  '+ta.value.slice(en);ta.selectionStart=ta.selectionEnd=s+2;sync();}
+  });
+}
+
+async function load(){list=await api('/api/problems');draw()}
+
+function draw(){
+  $('#bP').className=mode==='practice'?'on':'';
+  $('#bA').className=mode==='author'?'on':'';
+  const items=list.map(p=>`<div class="it ${cur==p.id?'on':''}" data-id="${p.id}">
+    <span class="it-title">${esc(p.title)}</span>
+    <div class="it-right">
+      <span class="badge ${solved[p.id]?'ok':levelClass(p.level)}">${solved[p.id]?'✓':esc(p.level||'—')}</span>
+      ${mode==='author'&&key?`<button class="del-item" data-del="${p.id}" title="Delete">🗑</button>`:''}
+    </div>
+  </div>`).join('');
+  const newBtn=mode==='author'&&key?`<div class="new-btn"><button id="new">+ New Problem</button></div>`:'';
+  $('#app').innerHTML=`<div class="sidebar${sidebarOpen?'':' hidden'}">
+    <div class="sidebar-head">Problems (${list.length})</div>
+    ${items}${newBtn}
+  </div><div class="workspace" id="ws"></div>`;
+  document.querySelectorAll('.it').forEach(e=>e.onclick=()=>{cur=e.dataset.id;mode==='author'?editProblem(cur):practice(cur)});
+  document.querySelectorAll('.del-item').forEach(b=>b.onclick=async e=>{
+    e.stopPropagation();
+    const pid=b.dataset.del;
+    const title=list.find(p=>p.id===pid)?.title||pid;
+    if(confirm('Delete "'+title+'"?')){
+      await api('/api/admin/problems/'+pid,{method:'DELETE'});
+      if(cur===pid){cur=null;form=null;}
+      list=await api('/api/problems');draw();
+    }
+  });
+  if($('#new'))$('#new').onclick=()=>{cur=null;form={title:'',level:'Medium',description:'',schema_sql:'',solution:'',ordered:0,hide_tests:1,check_cols:0,tests:[]};draw();authorForm()};
+  if(mode==='author'&&!key)loginPane();
+  else if(mode==='author'&&form)authorForm();
+  else $('#ws').innerHTML=`<div class="empty"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14c0 1.66 4.03 3 9 3s9-1.34 9-3V5"/><path d="M3 12c0 1.66 4.03 3 9 3s9-1.34 9-3"/></svg><span>Pick a problem to start</span></div>`;
+}
+
+async function practice(id){
+  draw();
+  const p=await api('/api/problems/'+id);
+  const savedQ=localStorage['q_'+id]||'';
+  $('#ws').innerHTML=`
+    <div class="q-panel" id="qpanel">
+      <div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="card-title">${esc(p.title)}</div>
+          <span class="diff ${esc(p.level)}">${esc(p.level)}</span>
+        </div>
+        <div class="prob-desc">${esc(p.description)}</div>
+        ${p.checkCols?'<div class="msg info" style="margin-top:8px">⚠ Column names must match exactly.</div>':''}
+      </div>
+      <div>
+        <label class="lbl">Sample data</label>
+        <div id="sampleTbl"><div class="msg info"><span class="spin"></span>Loading…</div></div>
+      </div>
+      <div>
+        <label class="lbl">Expected output <span class="mut">(test 1)</span></label>
+        <div id="expTbl"><div class="msg info"><span class="spin"></span>Loading…</div></div>
+      </div>
+    </div>
+    <div class="code-panel">
+      <div class="editor-bar">
+        <button class="btn" id="toggleQ" title="Toggle question panel">◀ Question</button>
+        <span style="font-size:12px;color:var(--mut)">SQLite · SELECT / WITH only</span>
+        <div style="flex:1"></div>
+        <button class="btn" id="run">▶ Run on sample</button>
+        <button class="btn" id="runtests">🧪 Run test cases</button>
+        <button class="btn primary" id="sub">✔ Submit</button>
+        <button class="btn" id="clr" title="Clear submission">✕ Clear</button>
+      </div>
+      <div class="hl-wrap" style="flex:1;min-height:0">
+        <div class="hl-bg"></div>
+        <pre class="hl-pre sql-hl" id="q_hl">${hlSQL(savedQ)}</pre>
+        <textarea class="hl-textarea" id="q" spellcheck="false" placeholder="SELECT ...">${esc(savedQ)}</textarea>
+      </div>
+      <div class="drag-divider" id="dragDiv"></div>
+      <div class="out-tabs">
+        <button class="out-tab on" data-tab="output">Output</button>
+        <button class="out-tab" data-tab="results">Test Results</button>
+      </div>
+      <div class="output-area" id="outArea" style="height:260px"></div>
+    </div>`;
+
+  bindEditor('q');
+  $('#q').oninput=e=>localStorage['q_'+id]=e.target.value;
+
+  // drag to resize output panel
+  const divider=$('#dragDiv'), outArea=$('#outArea'), codePanel=$('.code-panel');
+  divider.onmousedown=e=>{
+    e.preventDefault();
+    divider.classList.add('dragging');
+    const onMove=ev=>{
+      const panelRect=codePanel.getBoundingClientRect();
+      const newH=panelRect.bottom-ev.clientY-40; // 40 = tabs height
+      outArea.style.height=Math.max(60,Math.min(newH,panelRect.height-120))+'px';
+    };
+    const onUp=()=>{
+      divider.classList.remove('dragging');
+      document.removeEventListener('mousemove',onMove);
+      document.removeEventListener('mouseup',onUp);
+    };
+    document.addEventListener('mousemove',onMove);
+    document.addEventListener('mouseup',onUp);
+  };
+
+  // toggle question panel
+  $('#toggleQ').onclick=()=>{
+    const qp=$('#qpanel');
+    qp.classList.toggle('hidden');
+    $('#toggleQ').textContent=qp.classList.contains('hidden')?'▶ Question':'◀ Question';
+  };
+
+  // output tabs
+  document.querySelectorAll('.out-tab').forEach(t=>t.onclick=()=>{
+    activeOutTab=t.dataset.tab;
+    document.querySelectorAll('.out-tab').forEach(x=>x.classList.toggle('on',x===t));
+  });
+
+  // load sample tables
+  (async()=>{
+    try{
+      const r=await api('/api/preview-tables',{method:'POST',body:{id}});
+      if(r.tables&&r.tables.length){
+        $('#sampleTbl').innerHTML=r.tables.map(t=>`<div style="margin-bottom:10px"><div class="lbl" style="margin-top:0">${esc(t.name)}</div>${table(t.rows)}</div>`).join('');
+      } else $('#sampleTbl').innerHTML='<span class="mut" style="font-size:12px">No data</span>';
+    }catch(_){$('#sampleTbl').innerHTML='<span class="mut" style="font-size:12px">—</span>';}
+  })();
+
+  // load expected output
+  (async()=>{
+    try{
+      const r=await api('/api/problems/'+id+'/expected');
+      $('#expTbl').innerHTML=r.rows&&r.rows.length?table(r.rows):'<span class="mut" style="font-size:12px">(no rows)</span>';
+    }catch(_){$('#expTbl').innerHTML='<span class="mut" style="font-size:12px">—</span>';}
+  })();
+
+  $('#run').onclick=async()=>{
+    $('#outArea').innerHTML='<div class="msg info"><span class="spin"></span>Running on sample…</div>';
+    activeOutTab='output';
+    document.querySelectorAll('.out-tab').forEach(t=>t.classList.toggle('on',t.dataset.tab==='output'));
+    try{
+      const r=await api('/api/run',{method:'POST',body:{id,sql:$('#q').value,mode:'sample'}});
+      $('#outArea').innerHTML=r.error?`<div class="msg bad">${esc(r.error)}</div>`:'<label class="lbl">Your output</label>'+table(r.output);
+    }catch(e){$('#outArea').innerHTML=`<div class="msg bad">${esc(e.message)}</div>`}
+  };
+
+  $('#runtests').onclick=async()=>{
+    $('#outArea').innerHTML='<div class="msg info"><span class="spin"></span>Running test cases…</div>';
+    activeOutTab='results';
+    document.querySelectorAll('.out-tab').forEach(t=>t.classList.toggle('on',t.dataset.tab==='results'));
+    try{
+      const r=await api('/api/run',{method:'POST',body:{id,sql:$('#q').value}});
+      const all=r.passed===r.total;
+      const cheers=['Superrrr my rockstar! 🌟','Love you Ammu 💖','Vera level my king! 👑'];
+      const tries=['Come on baby try harder 💪','Try my love 🥺','You can do it ammuuu! 💕'];
+      const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+      const banner=all
+        ?`<div style="background:linear-gradient(135deg,#ffb6c1,#ff9eb5);border:1.5px solid #ff85a1;border-radius:12px;padding:20px;margin-bottom:10px;text-align:center">
+            <div style="font-size:30px;margin-bottom:8px">🎉💖🎉</div>
+            <div style="font-size:18px;font-weight:700;color:#8b0038">${pick(cheers)}</div>
+            <div style="font-size:13px;color:#a0004a;margin-top:6px">All ${r.total} tests passed!</div>
+          </div>`
+        :`<div class="msg bad" style="margin-bottom:8px"><b>${pick(tries)} — ${r.passed}/${r.total} passed</b></div>`;
+      const rows=r.results.map(x=>{
+        if(all)return `<div class="res" style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">✅</span><span class="ok" style="font-weight:600">Test ${x.n}</span><span class="mut">${esc(x.name||'')}</span></div>`;
+        return `<div class="res"><b class="${x.pass?'ok':'bad'}">${x.pass?'✓':'✗'} Test ${x.n}</b> <span class="mut">${esc(x.name||'')}</span>${x.message?`<div class="bad" style="font-size:12px;margin-top:3px">${esc(x.message)}</div>`:''}${x.got?'<div style="margin-top:6px">'+table(x.got)+'</div>':''}</div>`;
+      }).join('');
+      $('#outArea').innerHTML=banner+rows;
+      // auto-expand output area to show banner
+      const oa=$('#outArea');
+      if(oa)oa.style.height=Math.max(260,Math.min(oa.scrollHeight+20,500))+'px';
+    }catch(e){$('#outArea').innerHTML=`<div class="msg bad">${esc(e.message)}</div>`}
+  };
+
+  $('#sub').onclick=async()=>{
+    $('#outArea').innerHTML='<div class="msg info"><span class="spin"></span>Submitting…</div>';
+    activeOutTab='results';
+    document.querySelectorAll('.out-tab').forEach(t=>t.classList.toggle('on',t.dataset.tab==='results'));
+    try{
+      const r=await api('/api/run',{method:'POST',body:{id,sql:$('#q').value}});
+      const all=r.passed===r.total;
+      const cheers=['Superrrr my rockstar! 🌟','Love you Ammu 💖','Vera level my king! 👑'];
+      const tries=['Come on baby try harder 💪','Try my love 🥺','You can do it ammuuu! 💕'];
+      const pick=arr=>arr[Math.floor(Math.random()*arr.length)];
+      const banner=all
+        ?`<div style="background:linear-gradient(135deg,#ffb6c1,#ff9eb5);border:1.5px solid #ff85a1;border-radius:12px;padding:20px;margin-bottom:10px;text-align:center">
+            <div style="font-size:30px;margin-bottom:8px">🎉💖🎉</div>
+            <div style="font-size:18px;font-weight:700;color:#8b0038">${pick(cheers)}</div>
+            <div style="font-size:13px;color:#a0004a;margin-top:6px">All ${r.total} tests passed!</div>
+          </div>`
+        :`<div class="msg bad" style="margin-bottom:8px"><b>${pick(tries)} — ${r.passed}/${r.total} passed</b></div>`;
+      const rows=r.results.map(x=>{
+        if(all)return `<div class="res" style="display:flex;align-items:center;gap:8px"><span style="font-size:16px">✅</span><span class="ok" style="font-weight:600">Test ${x.n}</span><span class="mut">${esc(x.name||'')}</span></div>`;
+        return `<div class="res"><b class="${x.pass?'ok':'bad'}">${x.pass?'✓':'✗'} Test ${x.n}</b> <span class="mut">${esc(x.name||'')}</span>${x.message?`<div class="bad" style="font-size:12px;margin-top:3px">${esc(x.message)}</div>`:''}${x.got?'<div style="margin-top:6px">'+table(x.got)+'</div>':''}</div>`;
+      }).join('');
+      $('#outArea').innerHTML=banner+rows;
+      const oa2=$('#outArea');if(oa2)oa2.style.height=Math.max(260,Math.min(oa2.scrollHeight+20,500))+'px';
+      if(all){solved[id]=1;localStorage.solved=JSON.stringify(solved);const sb=$('.sidebar');if(sb){const el=sb.querySelector('[data-id="'+id+'"] .badge');if(el){el.className='badge ok';el.textContent='✓';}}}
+    }catch(e){$('#outArea').innerHTML=`<div class="msg bad">${esc(e.message)}</div>`}
+  };
+}
+
+function loginPane(){
+  $('#ws').innerHTML=`<div class="login-wrap"><div class="card">
+    <div class="card-title">Author Login</div>
+    <label class="lbl">Admin password</label>
+    <input id="pw" type="password" placeholder="••••••••">
+    <div class="row"><button class="btn primary" id="li">Log in</button><span id="lm" class="bad" style="font-size:13px"></span></div>
+  </div></div>`;
+  $('#li').onclick=async()=>{key=$('#pw').value;try{await api('/api/admin/login',{method:'POST'});sessionStorage.adminKey=key;draw()}catch(e){key='';$('#lm').textContent=e.message}};
+}
+
+async function editProblem(id){form=await api('/api/admin/problems/'+id);draw()}
+
+function authorForm(){
+  const f=form;
+  const schemaVal=f.schema_sql||'';
+  const solVal=f.solution||'';
+  $('#ws').innerHTML=`<div style="overflow-y:auto;flex:1;padding:16px"><div class="card">
+    <div class="card-title" style="margin-bottom:12px">${f.id?'Edit Problem':'New Problem'}</div>
+    <label class="lbl">Title</label><input id="t" type="text" value="${esc(f.title)}" placeholder="e.g. Second Highest Salary">
+    <label class="lbl">Difficulty</label>
+    <select id="l">${['Easy','Medium','Hard'].map(v=>`<option ${f.level===v?'selected':''}>${v}</option>`).join('')}</select>
+    <label class="lbl">Question <span class="mut">(paste any format)</span></label>
+    <textarea id="d" rows="5" placeholder="Paste the question here…">${esc(f.description)}</textarea>
+    <div class="row">
+      <button class="btn ai" id="auto">✨ Auto-fill from question</button>
+      <span class="mut" style="font-size:12px">Generates schema, solution &amp; tests</span>
+    </div>
+    <label class="lbl">Schema <span class="mut">(CREATE TABLE — blank = AI designs it)</span></label>
+    ${makeEditor('s',schemaVal,5)}
+    <label class="lbl">Reference solution</label>
+    ${makeEditor('r',solVal,4)}
+    <div class="row">
+      <button class="btn ai" id="ai">🤖 Generate test cases</button>
+      <label style="margin:0;font-size:13px;color:var(--mut)">count <input id="n" type="number" value="6" min="2" max="12" style="width:60px;display:inline-block;padding:5px 8px"></label>
+    </div>
+    <div id="am"></div>
+    <div id="tcs"></div>
+    <div class="row" style="margin-top:12px;gap:14px">
+      <label class="check-row"><input type="checkbox" id="o" ${f.ordered?'checked':''}> Row order matters</label>
+      <label class="check-row"><input type="checkbox" id="h" ${f.hide_tests?'checked':''}> Hide tests 2+</label>
+      <label class="check-row"><input type="checkbox" id="c" ${f.check_cols?'checked':''}> Require exact column names</label>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn primary" id="sv">Save &amp; publish</button>
+      ${f.id?'<button class="btn danger" id="dl">Delete</button>':''}
+      <span id="sm" style="font-size:13px"></span>
+    </div>
+  </div></div>`;
+
+  bindEditor('s');bindEditor('r');
+  renderTests();
+
+  const read=()=>Object.assign(form,{
+    title:$('#t').value,level:$('#l').value,description:$('#d').value,
+    schema_sql:$('#s').value,solution:$('#r').value,
+    ordered:$('#o').checked,check_cols:$('#c').checked,hide_tests:$('#h').checked
+  });
+
+  $('#ai').onclick=async()=>{
+    read();$('#ai').disabled=true;
+    $('#am').innerHTML='<div class="msg info"><span class="spin"></span>Designing adversarial tests… (30–60s)</div>';
+    try{
+      const r=await api('/api/admin/ai-tests',{method:'POST',body:{...form,count:+$('#n').value}});
+      form.tests=r.tests;
+      $('#am').innerHTML=`<div class="msg ok">Generated ${r.tests.length} tests${r.rejected.length?`, ${r.rejected.length} discarded`:''}. Catches = wrong queries exposed (of ${r.wrongQueries}).</div>`;
+      renderTests();
+    }catch(e){$('#am').innerHTML=`<div class="msg bad">${esc(e.message)}</div>`}
+    $('#ai').disabled=false;
+  };
+
+  $('#auto').onclick=async()=>{
+    read();
+    if(form.description.trim().length<10){$('#am').innerHTML='<div class="msg bad">Write the question first.</div>';return}
+    $('#auto').disabled=true;
+    const hasSchema=form.schema_sql.trim().length>0;
+    $('#am').innerHTML=`<div class="msg info"><span class="spin"></span>${hasSchema?'Using your schema — generating solution &amp; tests':'Designing schema, solution and tests'}… (up to a minute)</div>`;
+    try{
+      const r=await api('/api/admin/ai-draft',{method:'POST',body:{description:form.description,schema_sql:form.schema_sql,count:+$('#n').value}});
+      Object.assign(form,{description:r.question||form.description,check_cols:r.check_cols,title:form.title||r.title,level:r.level||form.level,schema_sql:r.schema_sql,solution:r.solution,ordered:r.ordered,tests:r.tests});
+      authorForm();
+      $('#am').innerHTML=`<div class="msg ok"><b>Draft ready — review before saving.</b>${r.assumptions?'<div style="margin-top:4px;font-size:12px;color:var(--mut)">Assumptions: '+esc(r.assumptions)+'</div>':''}</div><label class="lbl">Expected output (test 1)</label>`+table(r.sample)+(r.rejected.length?`<div class="mut" style="font-size:12px;margin-top:5px">${r.rejected.length} test(s) discarded.</div>`:'');
+    }catch(e){$('#auto').disabled=false;$('#am').innerHTML=`<div class="msg bad">${esc(e.message)}</div>`}
+  };
+
+  $('#sv').onclick=async()=>{
+    read();
+    try{
+      const r=await api('/api/admin/problems',{method:'POST',body:form});
+      form.id=r.id;cur=r.id;
+      $('#sm').innerHTML='<span class="ok">✓ Saved</span>';
+      list=await api('/api/problems');draw();
+    }catch(e){$('#sm').innerHTML=`<span class="bad">${esc(e.message)}</span>`}
+  };
+
+  if($('#dl'))$('#dl').onclick=async()=>{
+    if(confirm('Delete this problem?')){
+      await api('/api/admin/problems/'+form.id,{method:'DELETE'});
+      form=null;cur=null;load();
+    }
+  };
+}
+
+function renderTests(){
+  $('#tcs').innerHTML=form.tests.map((t,i)=>`<div class="tc">
+    <div class="tc-head">
+      <span class="tc-name">${i+1}. ${esc(t.name)}</span>
+      <span class="tc-meta">${t.catches!=null?'catches '+t.catches+' · ':''}${esc(t.targets||'')}</span>
+    </div>
+    <textarea data-i="${i}" rows="4" spellcheck="false">${esc(t.setup)}</textarea>
+    <div style="margin-top:6px"><button class="btn danger" style="font-size:12px;padding:4px 10px" data-x="${i}">Remove</button></div>
+  </div>`).join('');
+  document.querySelectorAll('#tcs textarea').forEach(e=>e.oninput=()=>form.tests[e.dataset.i].setup=e.value);
+  document.querySelectorAll('#tcs button[data-x]').forEach(b=>b.onclick=()=>{form.tests.splice(+b.dataset.x,1);renderTests()});
+}
+
+$('#bP').onclick=()=>{mode='practice';form=null;draw()};
+$('#bA').onclick=()=>{mode='author';form=null;draw()};
+load();
+</script>
+</body></html>
