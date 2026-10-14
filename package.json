@@ -10,7 +10,7 @@
     "node": ">=20"
   },
   "dependencies": {
-    "better-sqlite3": "^13.0.3",
+    "better-sqlite3": "^9.4.3",
     "express": "^4.21.0"
   }
 }
