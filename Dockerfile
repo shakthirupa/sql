@@ -1,9 +1,9 @@
-FROM node:20-alpine
-RUN apk add --no-cache python3 make g++
+FROM node:20-bookworm-slim
+RUN apt-get update && apt-get install -y --no-install-recommends python3 make g++ && rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci --omit=dev --ignore-scripts
-RUN npm rebuild better-sqlite3 --build-from-source
+RUN ./node_modules/.bin/node-pre-gyp install --fallback-to-build --directory ./node_modules/better-sqlite3 --nodedir=/usr/local
 COPY . .
 ENV PORT=3000 DATA_DIR=/data
 EXPOSE 3000
